@@ -1,39 +1,15 @@
 (ns clj-hue.hue
-  (:require [clojure.data.json :as json])
-  (:import (java.net HttpURLConnection URL)))
+  (:require [clojure.data.json :as json]
+            [clj-http.client :as client]))
 
-(defn- parse-headers
-  [con]
-  "Creates headers from the given connection"
-  (into {} (for [[k v] (.getHeaderFields con) :when k] [(keyword (.toLowerCase k)) (seq v)])))
-
-(defmulti get-url class)
-(defmethod get-url URL [s]
-  (let [con (.openConnection s)
-        is (.getInputStream con)]
-    {:headers (parse-headers con) :status (.getResponseCode con) :content (slurp is)}))
-(defmethod get-url String [s] (get-url (URL. s)))
-
-(defmulti post-url (fn [o & rest] (class o)))
-(defmethod post-url URL [s body]
-  (println "post-url " s body)
-  (with-open [con (.openConnection s)
-              _ (.setDoOutput con true)
-              writer (java.io.OutputStreamWriter. (.getOutputStream con))
-              is (.getInputStream con)]
-    (.write writer body)
-    (.flush writer)
-    {:headers (parse-headers con) :status (.getResponseCode con) :content (slurp is)}))
-(defmethod post-url String [s body]
-  (post-url (URL. s) body))
-
-(defn find-bridges []
+(defn find-bridges
+  []
   "Finds local bridges and returns data about it, like
   [{\"id\":\"001788fffe0a9184\",\"internalipaddress\":\"192.168.178.40\",\"macaddress\":\"00:17:88:0a:91:84\"}]"
-  (let [r (get-url "http://www.meethue.com/api/nupnp")]
+  (let [r (client/get "http://www.meethue.com/api/nupnp")]
     (if (= (:status r) 200)
-      (json/read-str (:content r) :key-fn keyword)
-      nil)))
+      (json/read-str (:body r) :key-fn keyword)
+      r)))
 
 (defn register-url
   [{:keys [internalipaddress]}]
@@ -45,21 +21,26 @@
      (str (register-url bridge) username))
   ([bridge user fragment] (str (api-url bridge user) fragment)))
 
-(defn lights [bridge user]
+(defn lights
+  [bridge user]
   "Returns information about all lights"
   (let [u (api-url bridge user "/lights")
-        r (get-url u)]
+        r (client/get u)]
     (if (= (:status r) 200)
       (json/read-str (:content r) :key-fn keyword)
-      nil)))
+      r)))
 
-(defn register [bridge user]
+(defn register
+  [bridge user]
   "Registers with local hub"
   (let [u (register-url bridge)
-        r (post-url u (json/write-str user))]
-    r))
+        r (client/post u {:body (json/write-str user)})]
+    (if (= (:status r) 200)
+      (json/read-str (:body r))
+      r)))
 
-(defn error? [json]
+(defn error?
+  [json]
   "Checks whether json contains :error element and returns true in that case,nil otherwise"
   (if (get json :error nil)
     true
@@ -67,9 +48,9 @@
 
 (defn load-all
   []
+  "Test function"
   (let [[bridge & bridges] (find-bridges)
-        user { :devicetype "test user" :username "cljhue"}
-        ]
+        user {:devicetype "clj-hue" :username "cljhue4242"}]
     (println "bridge: " bridge)
     (println "register url: " (register-url bridge))
     (println "api url: " (api-url bridge user))
