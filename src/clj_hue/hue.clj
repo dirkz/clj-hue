@@ -61,7 +61,7 @@
   (let [r (client/get (api-url bridge user))]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
-      r))) 
+      r)))
 
 (defn get-light
   [bridge user light-id]
@@ -69,7 +69,7 @@
   (let [r (client/get (api-url bridge user (str "/lights/" light-id)))]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
-      r))) 
+      r)))
 
 (defn set-light
   [bridge user light-id settings]
@@ -78,7 +78,7 @@
         r (client/put (api-url bridge user (str "/lights/" light-id "/state")) {:body to-set :content-type :json})]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
-      r))) 
+      r)))
 
 (defn test-bridge
   []
@@ -97,13 +97,12 @@
         user (test-user)]
     (println "bridge: " bridge)
     (println "register url: " (register-url bridge))
-    (println "api url: " (api-url bridge user))
-    (println (register bridge user))))
+    (println "api url: " (api-url bridge user))    (println (register bridge user))))
 
 (defn lights-test
   []
   "Test function for loading lights"
-  (let [bridge (test-bridge) 
+  (let [bridge (test-bridge)
         user (test-user)]
     ;(println (get-lights bridge user))
     ;(println (get-light bridge user 3))
@@ -120,7 +119,11 @@
 (defn full-state-test
   []
   "Test function for loading configuration"
-  (let [bridge (test-bridge) 
+  (let [bridge (test-bridge)
         user (test-user)]
     (get-full-state bridge user)))
 
+(comment
+  (set-light (test-bridge) (test-user) 3 {:hue 56100 :bri 128 :sat 255})
+  (set-light (test-bridge) (test-user) 3 {:effect "colorloop" :bri 64 :sat 255})
+  (set-light (test-bridge) (test-user) 3 {:effect "none" :bri 64 :sat 255}))
