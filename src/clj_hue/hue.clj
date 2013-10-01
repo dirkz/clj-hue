@@ -86,8 +86,11 @@
       r)))
 
 (comment
-  (def bridge ((find-bridges) 0))
+  (def bridge (merge {:devicetype "clj-hue" :username "cljhue4242"} ((find-bridges) 0)))
+  (println bridge)
+  (println (get-lights bridge))
   (set-light bridge 3 {:hue 56100 :bri 128 :sat 255})
+  (set-light bridge 2 {:hue 56100 :bri 128 :sat 255})
   (set-light bridge 3 {:effect "colorloop" :bri 64 :sat 255})
   (set-light bridge 3 {:effect "none" :bri 64 :sat 255})
   (get-light bridge 3))

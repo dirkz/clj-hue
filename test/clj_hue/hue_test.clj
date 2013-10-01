@@ -57,7 +57,7 @@
 
 (deftest test-set-light
   (let [b (merge test-user ((find-bridges) 0))
-        r (set-light b 1 {:hue 56100 :bri 128 :sat 255})]
+        r (set-light b 3 {:hue 56100 :bri 128 :sat 255})]
     (is (= 3 (count r)))
     (is (contains? (r 0) :success))
     (is (contains? (r 1) :success))
