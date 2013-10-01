@@ -5,7 +5,7 @@
 (defn find-bridges
   []
   "Finds local bridges and returns data about it, like
-  [{\"id\":\"001788fffe0a9184\",\"internalipaddress\":\"192.168.178.40\",\"macaddress\":\"00:17:88:0a:91:84\"}]"
+  [{\"id\":\"001788ff184\",\"internalipaddress\":\"192.168.178.40\",\"macaddress\":\"00:17:88:0a:ff:ff\"}]"
   (let [r (client/get "http://www.meethue.com/api/nupnp")]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
@@ -17,25 +17,29 @@
   (str "http://" internalipaddress "/api/"))
 
 (defn api-url
-  ([{:keys [internalipaddress] :as bridge} {:keys [username] :as user}]
+  ([{:keys [internalipaddress username] :as bridge}]
      "Given a bridge and a user, returns the corresponsing main URI for accessing the API"
      (str (register-url bridge) username))
-  ([bridge user fragment] (str (api-url bridge user) fragment)))
+  ([bridge fragment] (str (api-url bridge) fragment)))
 
 (defn get-lights
-  [bridge user]
+  [bridge]
   "Returns information about all lights"
-  (let [u (api-url bridge user "/lights")
+  (let [u (api-url bridge "/lights")
         r (client/get u)]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
       r)))
 
+(defn user-from-bridge
+  [{:keys [devicetype username] :as bridge}]
+  {:devicetype devicetype :username username})
+
 (defn register
-  [bridge user]
+  [{:keys [devicetype username] :as b}]
   "Registers with local hub"
-  (let [u (register-url bridge)
-        r (client/post u {:body (json/write-str user)})]
+  (let [u (register-url b)
+        r (client/post u {:body (json/write-str (user-from-bridge b))})]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
       r)))
@@ -48,82 +52,41 @@
     false))
 
 (defn get-configuration
-  [bridge user]
+  [bridge]
   "Returns complete configuration"
-  (let [r (client/get (api-url bridge user "/config"))]
+  (let [r (client/get (api-url bridge "/config"))]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
       r)))
 
 (defn get-full-state
-  [bridge user]
+  [bridge]
   "Returns the complete hue state"
-  (let [r (client/get (api-url bridge user))]
+  (let [r (client/get (api-url bridge))]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
       r)))
 
 (defn get-light
-  [bridge user light-id]
+  [bridge light-id]
   "Returns the state of the given light"
-  (let [r (client/get (api-url bridge user (str "/lights/" light-id)))]
+  (let [r (client/get (api-url bridge (str "/lights/" light-id)))]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
       r)))
 
 (defn set-light
-  [bridge user light-id settings]
-  "Returns the state of the given light"
+  [bridge light-id settings]
+  "Sets the state of the given light"
   (let [to-set (json/write-str settings)
-        r (client/put (api-url bridge user (str "/lights/" light-id "/state")) {:body to-set :content-type :json})]
+        r (client/put (api-url bridge (str "/lights/" light-id "/state")) {:body to-set :content-type :json})]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)
       r)))
 
-(defn test-bridge
-  []
-  "Returns a test bridge"
-  {:internalipaddress "192.168.178.40"})
-
-(defn test-user
-  []
-  "Returns a test user"
-  {:devicetype "clj-hue" :username "cljhue4242"})
-
-(defn register-test
-  []
-  "Test function for registering"
-  (let [[bridge & bridges] (find-bridges)
-        user (test-user)]
-    (println "bridge: " bridge)
-    (println "register url: " (register-url bridge))
-    (println "api url: " (api-url bridge user))    (println (register bridge user))))
-
-(defn lights-test
-  []
-  "Test function for loading lights"
-  (let [bridge (test-bridge)
-        user (test-user)]
-    ;(println (get-lights bridge user))
-    ;(println (get-light bridge user 3))
-    (println (set-light bridge user 3 {:hue 56100 :bri 128 :sat 255}))
-    ))
-
-(defn configuration-test
-  []
-  "Test function for loading configuration"
-  (let [bridge (test-bridge)
-        user (test-user)]
-    (get-configuration bridge user)))
-
-(defn full-state-test
-  []
-  "Test function for loading configuration"
-  (let [bridge (test-bridge)
-        user (test-user)]
-    (get-full-state bridge user)))
-
 (comment
-  (set-light (test-bridge) (test-user) 3 {:hue 56100 :bri 128 :sat 255})
-  (set-light (test-bridge) (test-user) 3 {:effect "colorloop" :bri 64 :sat 255})
-  (set-light (test-bridge) (test-user) 3 {:effect "none" :bri 64 :sat 255}))
+  (def bridge ((find-bridges) 0))
+  (set-light bridge 3 {:hue 56100 :bri 128 :sat 255})
+  (set-light bridge 3 {:effect "colorloop" :bri 64 :sat 255})
+  (set-light bridge 3 {:effect "none" :bri 64 :sat 255})
+  (get-light bridge 3))
