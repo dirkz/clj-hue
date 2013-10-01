@@ -5,7 +5,8 @@
 (defn find-bridges
   []
   "Finds local bridges and returns data about it, like
-  [{\"id\":\"001788ff184\",\"internalipaddress\":\"192.168.178.40\",\"macaddress\":\"00:17:88:0a:ff:ff\"}]"
+  [{\"id\":\"001788ff184\",\"internalipaddress\":\"192.168.178.40\",\"macaddress\":\"00:17:88:0a:ff:ff\"}].
+  Assumes that the bridge can be found via http://www.meethue.com/api/nupnp"
   (let [r (client/get "http://www.meethue.com/api/nupnp")]
     (if (= (:status r) 200)
       (json/read-str (:body r) :key-fn keyword)

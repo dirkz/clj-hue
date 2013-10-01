@@ -9,7 +9,7 @@
   ;; assumes that the bridge can be found via http://www.meethue.com/api/nupnp
   ;; expecting:
   ;; [{:id "id", :internalipaddress "192.168.178.40", :macaddress "00:17:88:0a:ff:ff"}]
-  (is (count (find-bridges)) 1)
+  (is (>= (count (find-bridges))) 1)
   (let [b ((find-bridges) 0)]
     (is true (contains? b :id))
     (is true (contains? b :internalipaddress))
