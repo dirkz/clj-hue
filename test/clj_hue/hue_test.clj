@@ -55,9 +55,17 @@
     (is (contains? s :linkbutton))
     (is (contains? s :whitelist))))
 
-(deftest test-set-light
+(deftest test-set-light-3
   (let [b (merge test-user ((find-bridges) 0))
         r (set-light b 3 {:hue 56100 :bri 128 :sat 255})]
+    (is (= 3 (count r)))
+    (is (contains? (r 0) :success))
+    (is (contains? (r 1) :success))
+    (is (contains? (r 2) :success))))
+
+(deftest test-set-light-2
+  (let [b (merge test-user ((find-bridges) 0))
+        r (set-light b 2 {:hue 56100 :bri 128 :sat 255})]
     (is (= 3 (count r)))
     (is (contains? (r 0) :success))
     (is (contains? (r 1) :success))
