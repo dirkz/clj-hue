@@ -72,6 +72,17 @@
     (is (contains? (r 2) :success))))
 
 (comment
-  (let [b (merge test-user ((find-bridges) 0))
-        r (set-light b 3 {:hue 56100 :bri 128 :sat 255})]
-    (println r)))
+  (let [b (merge test-user ((find-bridges) 0))]
+    (println (set-light b 3 {:hue 56100 :bri 128 :sat 255}))
+    (println (set-light b 2 {:hue 56100 :bri 128 :sat 255}))))
+
+(defn sleep-on-error
+  [f t]
+  (while (some :error (f))
+    (Thread/sleep t)))
+
+(comment
+  (let [b (merge test-user ((find-bridges) 0))]
+    (doseq [_ (range)
+            hue (range 46920 56100 25)]
+      (sleep-on-error #(set-light b 3 {:hue hue :bri 128 :sat 255}) 250))))
